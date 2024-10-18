@@ -27,34 +27,34 @@ class CustomUserRegistrationView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
-    def perform_create(self, serializer):
-        # This method ovverrides the default perform_create method from CreateAPIView
-        user = serializer.save()
-        token = default_token_generator.make_token(user)
-        uid = urlsafe_base64_encode(force_bytes(user.pk))
-        verification_link = f"{self.request.scheme}://{self.request.get_host()}/api/verify-email/{uid}/{token}/"
+    # def perform_create(self, serializer):
+    #     # This method ovverrides the default perform_create method from CreateAPIView
+    #     user = serializer.save()
+    #     token = default_token_generator.make_token(user)
+    #     uid = urlsafe_base64_encode(force_bytes(user.pk))
+    #     verification_link = f"{self.request.scheme}://{self.request.get_host()}/api/verify-email/{uid}/{token}/"
 
-        # Printing the variables to make sure they are correct
-        print("From Email:", "koirala24sahil@gmail.com")
-        print("Recipient Email:", user.email)
-        print("Verification Link:", verification_link)
+    #     # Printing the variables to make sure they are correct
+    #     print("From Email:", "koirala24sahil@gmail.com")
+    #     print("Recipient Email:", user.email)
+    #     print("Verification Link:", verification_link)
 
-        # Sending the verification email
-        print(type(user.email))
-        print(user.email)
+    #     # Sending the verification email
+    #     print(type(user.email))
+    #     print(user.email)
 
-        try:
+    #     try:
 
-            send_mail(
-                subject="Verify Your Email",
-                message=f"Click the link to verify your email: {verification_link}",
-                from_email="koirala24sahil@gmail.com",
-                recipient_list=[user.email],
-                fail_silently=False,
-            )
-            print("Email sent successfully!")
-        except Exception as e:
-            print(f"Failed to send email: {e}")
+    #         send_mail(
+    #             subject="Verify Your Email",
+    #             message=f"Click the link to verify your email: {verification_link}",
+    #             from_email="koirala24sahil@gmail.com",
+    #             recipient_list=[user.email],
+    #             fail_silently=False,
+    #         )
+    #         print("Email sent successfully!")
+    #     except Exception as e:
+    #         print(f"Failed to send email: {e}")
 
 
 class EmailVerificationView(generics.GenericAPIView):

@@ -37,11 +37,3 @@ class CustomUser(AbstractUser):
     )
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
-
-    def save(self, *args, **kwargs):
-        # Automatically generate a referral code when the user is created
-        if not self.referral_code:
-            self.referral_code = str(uuid.uuid4())[
-                :8
-            ]  # Generate unique 8-character code
-        super().save(*args, **kwargs)
