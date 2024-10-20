@@ -15,6 +15,9 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.utils.http import urlsafe_base64_decode
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class CustomPagination(PageNumberPagination):
@@ -26,35 +29,6 @@ class CustomPagination(PageNumberPagination):
 class CustomUserRegistrationView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
-
-    # def perform_create(self, serializer):
-    #     # This method ovverrides the default perform_create method from CreateAPIView
-    #     user = serializer.save()
-    #     token = default_token_generator.make_token(user)
-    #     uid = urlsafe_base64_encode(force_bytes(user.pk))
-    #     verification_link = f"{self.request.scheme}://{self.request.get_host()}/api/verify-email/{uid}/{token}/"
-
-    #     # Printing the variables to make sure they are correct
-    #     print("From Email:", "koirala24sahil@gmail.com")
-    #     print("Recipient Email:", user.email)
-    #     print("Verification Link:", verification_link)
-
-    #     # Sending the verification email
-    #     print(type(user.email))
-    #     print(user.email)
-
-    #     try:
-
-    #         send_mail(
-    #             subject="Verify Your Email",
-    #             message=f"Click the link to verify your email: {verification_link}",
-    #             from_email="koirala24sahil@gmail.com",
-    #             recipient_list=[user.email],
-    #             fail_silently=False,
-    #         )
-    #         print("Email sent successfully!")
-    #     except Exception as e:
-    #         print(f"Failed to send email: {e}")
 
 
 class EmailVerificationView(generics.GenericAPIView):
@@ -89,13 +63,14 @@ class Login(APIView):
     def post(self, request):
         email = request.data["email"]
         password = request.data["password"]
+        logger.info(f"Login attempt for email: {email}")
         user = CustomUser.objects.filter(email=email).first()
         if user and not user.is_verified:
             token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             verification_link = f"{self.request.scheme}://{self.request.get_host()}/api/verify-email/{uid}/{token}/"
             try:
-
+                logger.info(f"Sending verification email to: {user.email}")
                 send_mail(
                     subject="Verify Your Email",
                     message=f"Click the link to verify your email: {verification_link}",
@@ -110,6 +85,7 @@ class Login(APIView):
                     <p>{verification_link}</p>
                     """,
                 )
+                logger.info(f"Verification email sent to: {user.email}")
                 return Response(
                     {
                         "detail": "Your email is not verified yet. A verification email has been sent to your email."
@@ -117,6 +93,7 @@ class Login(APIView):
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
             except Exception as e:
+                logger.error(f"Failed to send verification email to {user.email}: {e}")
                 return Response(
                     {"detail": f"Failed to send verification email: {e}"},
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -124,6 +101,7 @@ class Login(APIView):
         # Authenticate the verified user
         user = authenticate(email=email, password=password)
         if user:
+            logger.info(f"User {email} authenticated successfully.")
             refresh = RefreshToken.for_user(user)
             return Response(
                 {
@@ -132,6 +110,7 @@ class Login(APIView):
                 }
             )
         else:
+            logger.warning(f"Failed login attempt for email: {email}")
             return Response(
                 {"detail": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED
             )
